@@ -337,10 +337,12 @@ ${chalk.bold("Environment Variables:")}
   AWS_REGION                       - AWS region for Amazon Bedrock (e.g., us-east-1)
   ${ENV_AGENT_DIR.padEnd(32)} - Config directory (default: ~/${CONFIG_DIR_NAME}/agent)
   ${ENV_SESSION_DIR.padEnd(32)} - Session storage directory (overridden by --session-dir)
-  PI_PACKAGE_DIR                   - Legacy package directory override (for Nix/Guix store paths)
-  PI_OFFLINE                       - Legacy offline flag; disables startup network operations when set to 1/true/yes
-  PI_TELEMETRY                     - Legacy telemetry override when set to 1/true/yes or 0/false/no
-  PI_SHARE_VIEWER_URL              - Legacy base URL for /share command (default: https://pi.dev/session/)
+  MILLRACE_CLI_PACKAGE_DIR         - Package directory override (for Nix/Guix store paths)
+  MILLRACE_CLI_OFFLINE             - Disable startup network operations when set to 1/true/yes
+  MILLRACE_CLI_SKIP_VERSION_CHECK  - Skip the version update check
+  MILLRACE_CLI_TELEMETRY           - Install/update telemetry override when set to 1/true/yes or 0/false/no
+  MILLRACE_CLI_SHARE_VIEWER_URL    - Base URL for /share command (default: https://pi.dev/session/)
+  PI_* compatibility aliases remain supported for inherited scripts and old local setups.
 
 ${chalk.bold("Built-in Tool Names:")}
   read   - Read file contents

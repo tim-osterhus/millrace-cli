@@ -1,26 +1,38 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-	checkForNewPiVersion,
+	checkForNewMillraceCliVersion,
 	comparePackageVersions,
-	getLatestPiRelease,
-	getLatestPiVersion,
+	getLatestMillraceCliRelease,
+	getLatestMillraceCliVersion,
 	isNewerPackageVersion,
 } from "../src/utils/version-check.ts";
 
-const originalSkipVersionCheck = process.env.PI_SKIP_VERSION_CHECK;
-const originalOffline = process.env.PI_OFFLINE;
+const originalSkipVersionCheck = process.env.MILLRACE_CLI_SKIP_VERSION_CHECK;
+const originalOffline = process.env.MILLRACE_CLI_OFFLINE;
+const originalLegacySkipVersionCheck = process.env.PI_SKIP_VERSION_CHECK;
+const originalLegacyOffline = process.env.PI_OFFLINE;
 
 afterEach(() => {
 	vi.unstubAllGlobals();
 	if (originalSkipVersionCheck === undefined) {
-		delete process.env.PI_SKIP_VERSION_CHECK;
+		delete process.env.MILLRACE_CLI_SKIP_VERSION_CHECK;
 	} else {
-		process.env.PI_SKIP_VERSION_CHECK = originalSkipVersionCheck;
+		process.env.MILLRACE_CLI_SKIP_VERSION_CHECK = originalSkipVersionCheck;
 	}
 	if (originalOffline === undefined) {
+		delete process.env.MILLRACE_CLI_OFFLINE;
+	} else {
+		process.env.MILLRACE_CLI_OFFLINE = originalOffline;
+	}
+	if (originalLegacySkipVersionCheck === undefined) {
+		delete process.env.PI_SKIP_VERSION_CHECK;
+	} else {
+		process.env.PI_SKIP_VERSION_CHECK = originalLegacySkipVersionCheck;
+	}
+	if (originalLegacyOffline === undefined) {
 		delete process.env.PI_OFFLINE;
 	} else {
-		process.env.PI_OFFLINE = originalOffline;
+		process.env.PI_OFFLINE = originalLegacyOffline;
 	}
 });
 
@@ -37,15 +49,15 @@ describe("version checks", () => {
 		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.3" }));
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(checkForNewPiVersion("1.2.3")).resolves.toBeUndefined();
-		await expect(checkForNewPiVersion("1.2.2")).resolves.toEqual({ version: "1.2.3" });
+		await expect(checkForNewMillraceCliVersion("1.2.3")).resolves.toBeUndefined();
+		await expect(checkForNewMillraceCliVersion("1.2.2")).resolves.toEqual({ version: "1.2.3" });
 	});
 
 	it("uses the npm registry version metadata with a millrace-cli user agent", async () => {
 		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(getLatestPiVersion("1.2.3")).resolves.toBe("1.2.4");
+		await expect(getLatestMillraceCliVersion("1.2.3")).resolves.toBe("1.2.4");
 		expect(fetchMock).toHaveBeenCalledWith(
 			"https://registry.npmjs.org/millrace-cli/latest",
 			expect.objectContaining({
@@ -60,14 +72,14 @@ describe("version checks", () => {
 	it("returns the active package metadata from the version check api", async () => {
 		const fetchMock = vi.fn(async () =>
 			Response.json({
-				packageName: "@new-scope/pi",
+				packageName: "millrace-cli",
 				version: "1.2.4",
 			}),
 		);
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(getLatestPiRelease("1.2.3")).resolves.toEqual({
-			packageName: "@new-scope/pi",
+		await expect(getLatestMillraceCliRelease("1.2.3")).resolves.toEqual({
+			packageName: "millrace-cli",
 			version: "1.2.4",
 		});
 	});
@@ -76,15 +88,27 @@ describe("version checks", () => {
 		const fetchMock = vi.fn(async () => Response.json({ note: " **Read this** ", version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(getLatestPiRelease("1.2.3")).resolves.toEqual({ note: "**Read this**", version: "1.2.4" });
+		await expect(getLatestMillraceCliRelease("1.2.3")).resolves.toEqual({
+			note: "**Read this**",
+			version: "1.2.4",
+		});
 	});
 
 	it("skips api calls when version checks are disabled", async () => {
+		process.env.MILLRACE_CLI_SKIP_VERSION_CHECK = "1";
+		const fetchMock = vi.fn();
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(getLatestMillraceCliVersion("1.2.3")).resolves.toBeUndefined();
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps legacy Pi version check environment variables as compatibility aliases", async () => {
 		process.env.PI_SKIP_VERSION_CHECK = "1";
 		const fetchMock = vi.fn();
 		vi.stubGlobal("fetch", fetchMock);
 
-		await expect(getLatestPiVersion("1.2.3")).resolves.toBeUndefined();
+		await expect(getLatestMillraceCliVersion("1.2.3")).resolves.toBeUndefined();
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });

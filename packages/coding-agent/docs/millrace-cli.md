@@ -51,7 +51,7 @@ MILLRACE_CLI_CODING_AGENT_DIR
 MILLRACE_CLI_CODING_AGENT_SESSION_DIR
 ```
 
-Some inherited compatibility switches still use the `PI_` prefix, including `PI_OFFLINE`, `PI_PACKAGE_DIR`, and `PI_SKIP_VERSION_CHECK`.
+Legacy `PI_` compatibility aliases remain supported, but new scripts and docs should prefer `MILLRACE_CLI_*` names such as `MILLRACE_CLI_OFFLINE`, `MILLRACE_CLI_PACKAGE_DIR`, and `MILLRACE_CLI_SKIP_VERSION_CHECK`.
 
 ## Local Development
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-AUTH_FILE="$HOME/.pi/agent/auth.json"
-AUTH_BACKUP="$HOME/.pi/agent/auth.json.bak"
+AUTH_FILE="$HOME/.millrace-cli/agent/auth.json"
+AUTH_BACKUP="$HOME/.millrace-cli/agent/auth.json.bak"
 
 # Restore auth.json on exit (success or failure)
 cleanup() {
@@ -19,8 +19,9 @@ if [[ -f "$AUTH_FILE" ]]; then
     echo "Moved auth.json to backup"
 fi
 
-# Skip local LLM tests (ollama, lmstudio)
-export PI_NO_LOCAL_LLM=1
+# Keep local LLM tests opt-in, so this script cannot start Ollama, LM Studio, or llama.cpp checks.
+unset MILLRACE_CLI_ENABLE_LOCAL_LLM_TESTS
+unset PI_ENABLE_LOCAL_LLM_TESTS
 
 # Unset API keys (see packages/ai/src/stream.ts getEnvApiKey)
 unset ANTHROPIC_API_KEY

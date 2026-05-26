@@ -1,14 +1,14 @@
-> Millrace CLI can help you create Pi-style packages. Ask it to bundle your extensions, skills, prompt templates, or themes.
+> Millrace CLI can help you create resource packages. Ask it to bundle your extensions, skills, prompt templates, or themes.
 
-# Pi Packages
+# Package Resources
 
-Pi packages are the inherited resource-package format used by Millrace CLI. They bundle extensions, skills, prompt templates, and themes so you can share them through npm or git. A package can declare resources in `package.json` under the `pi` key, or use conventional directories.
+Package resources are the inherited Pi package format used by Millrace CLI. They bundle extensions, skills, prompt templates, and themes so you can share them through npm or git. A package can declare resources in `package.json` under the inherited `pi` key, or use conventional directories.
 
 ## Table of Contents
 
 - [Install and Manage](#install-and-manage)
 - [Package Sources](#package-sources)
-- [Creating a Pi Package](#creating-a-pi-package)
+- [Creating a Resource Package](#creating-a-resource-package)
 - [Package Structure](#package-structure)
 - [Dependencies](#dependencies)
 - [Package Filtering](#package-filtering)
@@ -17,7 +17,7 @@ Pi packages are the inherited resource-package format used by Millrace CLI. They
 
 ## Install and Manage
 
-> **Security:** Pi packages run with full system access. Extensions execute arbitrary code, and skills can instruct the model to perform any action including running executables. Review source code before installing third-party packages.
+> **Security:** Resource packages run with full system access. Extensions execute arbitrary code, and skills can instruct the model to perform any action including running executables. Review source code before installing third-party packages.
 
 ```bash
 millrace-cli install npm:@foo/bar@1.0.0
@@ -36,7 +36,7 @@ millrace-cli update npm:@foo/bar      # update one package
 millrace-cli update --extension npm:@foo/bar
 ```
 
-These commands manage Pi-style packages, not the Python `millrace` runtime. To uninstall Millrace CLI itself, see [Quickstart](quickstart.md#uninstall).
+These commands manage Millrace CLI resource packages, not the Python `millrace` runtime. To uninstall Millrace CLI itself, see [Quickstart](quickstart.md#uninstall).
 
 By default, `install` and `remove` write to user settings (`~/.millrace-cli/agent/settings.json`). Use `-l` to write to project settings (`.millrace-cli/settings.json`) instead. Project settings can be shared with your team, and Millrace CLI installs any missing packages automatically on startup.
 
@@ -111,14 +111,14 @@ millrace-cli install git:git@github.com:user/repo@v1.0.0
 
 Local paths point to files or directories on disk and are added to settings without copying. Relative paths are resolved against the settings file they appear in. If the path is a file, it loads as a single extension. If it is a directory, Millrace CLI loads resources using package rules.
 
-## Creating a Pi Package
+## Creating a Resource Package
 
-Add a `pi` manifest to `package.json` or use conventional directories. Include the `pi-package` keyword for discoverability.
+Add an inherited `pi` manifest to `package.json` or use conventional directories. Include the `millrace-cli-package` keyword for Millrace CLI discoverability. Add `pi-package` only when you also want inherited Pi ecosystem discovery.
 
 ```json
 {
   "name": "my-package",
-  "keywords": ["pi-package"],
+  "keywords": ["millrace-cli-package"],
   "pi": {
     "extensions": ["./extensions"],
     "skills": ["./skills"],
@@ -132,12 +132,12 @@ Paths are relative to the package root. Arrays support glob patterns and `!exclu
 
 ### Gallery Metadata
 
-The [package gallery](https://pi.dev/packages) displays packages tagged with `pi-package`. Add `video` or `image` fields to show a preview:
+Add `video` or `image` fields to show a preview in compatible package galleries:
 
 ```json
 {
   "name": "my-package",
-  "keywords": ["pi-package"],
+  "keywords": ["millrace-cli-package"],
   "pi": {
     "extensions": ["./extensions"],
     "video": "https://example.com/demo.mp4",
@@ -168,7 +168,7 @@ Third party runtime dependencies belong in `dependencies` in `package.json`. Dep
 
 Millrace CLI bundles inherited core packages for extensions and skills. If you import any of these, list them in `peerDependencies` with a `"*"` range and do not bundle them: `@earendil-works/pi-ai`, `@earendil-works/pi-agent-core`, `@earendil-works/pi-coding-agent`, `@earendil-works/pi-tui`, `typebox`.
 
-Other Pi packages must be bundled in your tarball. Add them to `dependencies` and `bundledDependencies`, then reference their resources through `node_modules/` paths. Millrace CLI loads packages with separate module roots, so separate installs do not collide or share modules.
+Other resource packages must be bundled in your tarball. Add them to `dependencies` and `bundledDependencies`, then reference their resources through `node_modules/` paths. Millrace CLI loads packages with separate module roots, so separate installs do not collide or share modules.
 
 Example:
 

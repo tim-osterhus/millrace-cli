@@ -40,7 +40,7 @@ node packages/coding-agent/dist/cli.js --version
 - [Skills](skills.md) - Agent Skills for reusable on-demand capabilities.
 - [Prompt templates](prompt-templates.md) - reusable prompts that expand from slash commands.
 - [Themes](themes.md) - built-in and custom terminal themes.
-- [Pi packages](packages.md) - inherited package resource model for extensions, skills, prompts, and themes.
+- [Package resources](packages.md) - inherited package resource model for extensions, skills, prompts, and themes.
 - [Custom models](models.md) - add model entries for supported provider APIs.
 - [Custom providers](custom-provider.md) - implement custom APIs and OAuth flows.
 

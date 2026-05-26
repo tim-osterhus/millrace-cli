@@ -36,7 +36,7 @@ Configure via `package.json`:
 
 ```json
 {
-  "piConfig": {
+  "millraceCliConfig": {
     "name": "millrace-cli",
     "configDir": ".millrace-cli"
   }
@@ -59,7 +59,7 @@ Never use `__dirname` directly for package assets.
 
 ## Debug Command
 
-`/debug` (hidden) writes to `~/.millrace-cli/agent/pi-debug.log`:
+`/debug` (hidden) writes to `~/.millrace-cli/agent/millrace-cli-debug.log`:
 - Rendered TUI lines with ANSI codes
 - Last messages sent to the LLM
 
@@ -67,6 +67,7 @@ Never use `__dirname` directly for package assets.
 
 ```bash
 ./test.sh                         # Run non-LLM tests (no API keys needed)
+./millrace-cli-test.sh --help     # Run the source CLI wrapper
 npm test                          # Run all tests
 npm test -- test/specific.test.ts # Run specific test
 ```

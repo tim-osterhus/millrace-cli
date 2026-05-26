@@ -11,7 +11,8 @@ import { configureHttpDispatcher } from "./core/http-dispatcher.ts";
 import { takeOverStdout } from "./core/output-guard.ts";
 
 process.title = APP_NAME;
-process.env.PI_CODING_AGENT = "true";
+process.env.MILLRACE_CLI_CODING_AGENT = "true";
+process.env.PI_CODING_AGENT ??= "true";
 process.emitWarning = (() => {}) as typeof process.emitWarning;
 
 // Configure undici's global dispatcher before provider SDKs issue requests.
@@ -57,8 +58,13 @@ async function resolveConfiguredPackagesForHelp(): Promise<void> {
 async function runCli(): Promise<void> {
 	const args = process.argv.slice(2);
 	const parsed = parseArgs(args);
-	const offlineMode = args.includes("--offline") || isTruthyEnvFlag(process.env.PI_OFFLINE);
+	const offlineMode =
+		args.includes("--offline") ||
+		isTruthyEnvFlag(process.env.MILLRACE_CLI_OFFLINE) ||
+		isTruthyEnvFlag(process.env.PI_OFFLINE);
 	if (offlineMode) {
+		process.env.MILLRACE_CLI_OFFLINE = "1";
+		process.env.MILLRACE_CLI_SKIP_VERSION_CHECK = "1";
 		process.env.PI_OFFLINE = "1";
 		process.env.PI_SKIP_VERSION_CHECK = "1";
 	}

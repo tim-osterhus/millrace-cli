@@ -181,6 +181,6 @@ node packages/coding-agent/dist/cli.js --help
 - [Providers](providers.md) - authentication and model setup.
 - [Settings](settings.md) - global and project configuration.
 - [Keybindings](keybindings.md) - shortcuts and customization.
-- [Pi Packages](packages.md) - inherited package resource model for shared extensions, skills, prompts, and themes.
+- [Package resources](packages.md) - inherited package resource model for shared extensions, skills, prompts, and themes.
 
 Platform notes: [Windows](windows.md), [Termux](termux.md), [tmux](tmux.md), [Terminal setup](terminal-setup.md), [Shell aliases](shell-aliases.md).

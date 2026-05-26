@@ -139,7 +139,7 @@ millrace-cli config                          # Enable/disable package resources
 
 These commands manage inherited Pi-style resource packages, not the Python `millrace` runtime. To uninstall Millrace CLI itself, see [Quickstart](quickstart.md#uninstall).
 
-See [Pi Packages](packages.md) for package sources and security notes.
+See [Package Resources](packages.md) for package sources and security notes.
 
 ### Modes
 
@@ -263,11 +263,13 @@ millrace-cli --tools read,grep,find,ls -p "Review the code"
 |----------|-------------|
 | `MILLRACE_CLI_CODING_AGENT_DIR` | Override config directory; default is `~/.millrace-cli/agent` |
 | `MILLRACE_CLI_CODING_AGENT_SESSION_DIR` | Override session storage directory; overridden by `--session-dir` |
-| `PI_PACKAGE_DIR` | Inherited override for package directory, useful for Nix/Guix store paths |
-| `PI_OFFLINE` | Inherited switch to disable startup network operations, including update checks, package update checks, and install/update telemetry |
-| `PI_SKIP_VERSION_CHECK` | Inherited switch to skip the version update check |
-| `PI_TELEMETRY` | Inherited install/update telemetry override: `1`/`true`/`yes` or `0`/`false`/`no`; this does not disable update checks |
-| `PI_CACHE_RETENTION` | Set to `long` for extended prompt cache where supported |
+| `MILLRACE_CLI_PACKAGE_DIR` | Override package directory, useful for Nix/Guix store paths |
+| `MILLRACE_CLI_OFFLINE` | Disable startup network operations, including update checks, package update checks, and install/update telemetry |
+| `MILLRACE_CLI_SKIP_VERSION_CHECK` | Skip the version update check |
+| `MILLRACE_CLI_TELEMETRY` | Install/update telemetry override: `1`/`true`/`yes` or `0`/`false`/`no`; this does not disable update checks |
+| `MILLRACE_CLI_SHARE_VIEWER_URL` | Override the `/share` viewer URL |
+| `PI_*` compatibility aliases | Legacy inherited aliases remain supported for existing local setups |
+| `PI_CACHE_RETENTION` | Inherited provider/cache tuning alias; set to `long` for extended prompt cache where supported |
 | `VISUAL`, `EDITOR` | External editor for Ctrl+G |
 
 ### Millmux Context Environment

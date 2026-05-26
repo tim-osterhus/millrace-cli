@@ -1,9 +1,9 @@
-import { getPiUserAgent } from "./pi-user-agent.ts";
+import { getMillraceCliUserAgent } from "./millrace-cli-user-agent.ts";
 
 const LATEST_VERSION_URL = "https://registry.npmjs.org/millrace-cli/latest";
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 10000;
 
-export interface LatestPiRelease {
+export interface LatestMillraceCliRelease {
 	version: string;
 	packageName?: string;
 	note?: string;
@@ -53,15 +53,16 @@ export function isNewerPackageVersion(candidateVersion: string, currentVersion: 
 	return candidateVersion.trim() !== currentVersion.trim();
 }
 
-export async function getLatestPiRelease(
+export async function getLatestMillraceCliRelease(
 	currentVersion: string,
 	options: { timeoutMs?: number } = {},
-): Promise<LatestPiRelease | undefined> {
+): Promise<LatestMillraceCliRelease | undefined> {
+	if (process.env.MILLRACE_CLI_SKIP_VERSION_CHECK || process.env.MILLRACE_CLI_OFFLINE) return undefined;
 	if (process.env.PI_SKIP_VERSION_CHECK || process.env.PI_OFFLINE) return undefined;
 
 	const response = await fetch(LATEST_VERSION_URL, {
 		headers: {
-			"User-Agent": getPiUserAgent(currentVersion),
+			"User-Agent": getMillraceCliUserAgent(currentVersion),
 			accept: "application/json",
 		},
 		signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_VERSION_CHECK_TIMEOUT_MS),
@@ -86,16 +87,18 @@ export async function getLatestPiRelease(
 	};
 }
 
-export async function getLatestPiVersion(
+export async function getLatestMillraceCliVersion(
 	currentVersion: string,
 	options: { timeoutMs?: number } = {},
 ): Promise<string | undefined> {
-	return (await getLatestPiRelease(currentVersion, options))?.version;
+	return (await getLatestMillraceCliRelease(currentVersion, options))?.version;
 }
 
-export async function checkForNewPiVersion(currentVersion: string): Promise<LatestPiRelease | undefined> {
+export async function checkForNewMillraceCliVersion(
+	currentVersion: string,
+): Promise<LatestMillraceCliRelease | undefined> {
 	try {
-		const latestRelease = await getLatestPiRelease(currentVersion);
+		const latestRelease = await getLatestMillraceCliRelease(currentVersion);
 		if (latestRelease && isNewerPackageVersion(latestRelease.version, currentVersion)) {
 			return latestRelease;
 		}

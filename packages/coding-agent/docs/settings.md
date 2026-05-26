@@ -52,7 +52,7 @@ Edit directly or use `/settings` for common options.
 
 `enableInstallTelemetry` only controls the inherited anonymous install/update ping. Opting out of telemetry does not disable update checks.
 
-Set `PI_SKIP_VERSION_CHECK=1` to disable the inherited version update check. Use `--offline` or `PI_OFFLINE=1` to disable all startup network operations described here, including update checks, package update checks, and install/update telemetry.
+Set `MILLRACE_CLI_SKIP_VERSION_CHECK=1` to disable the version update check. Use `--offline` or `MILLRACE_CLI_OFFLINE=1` to disable all startup network operations described here, including update checks, package update checks, and install/update telemetry. Legacy `PI_SKIP_VERSION_CHECK` and `PI_OFFLINE` aliases remain supported for inherited setups.
 
 ### Warnings
 
@@ -208,7 +208,7 @@ String form loads all resources from a package:
 
 ```json
 {
-  "packages": ["pi-skills", "@org/my-extension"]
+  "packages": ["millrace-cli-skills", "@org/my-extension"]
 }
 ```
 
@@ -218,7 +218,7 @@ Object form filters which resources to load:
 {
   "packages": [
     {
-      "source": "pi-skills",
+      "source": "millrace-cli-skills",
       "skills": ["brave-search", "transcribe"],
       "extensions": []
     }
@@ -249,7 +249,7 @@ See [packages.md](packages.md) for package management details.
   "warnings": {
     "anthropicExtraUsage": true
   },
-  "packages": ["pi-skills"]
+  "packages": ["millrace-cli-skills"]
 }
 ```
 
