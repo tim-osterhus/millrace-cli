@@ -26,6 +26,8 @@ const oauthTokens = await Promise.all([
 	resolveApiKey("openai-codex"),
 ]);
 const [anthropicOAuthToken, githubCopilotToken, openaiCodexToken] = oauthTokens;
+const enableLocalLlmTests =
+	process.env.MILLRACE_CLI_ENABLE_LOCAL_LLM_TESTS === "1" || process.env.PI_ENABLE_LOCAL_LLM_TESTS === "1";
 
 // Calculator tool definition (same as examples)
 // Note: Using StringEnum helper because Google's API doesn't support anyOf/const patterns
@@ -1486,9 +1488,9 @@ describe("Generate E2E Tests", () => {
 		});
 	});
 
-	// Check if ollama is installed and local LLM tests are enabled
+	// Local LLM tests are intentionally opt-in because they may start local services or pull large models.
 	let ollamaInstalled = false;
-	if (!process.env.PI_NO_LOCAL_LLM) {
+	if (enableLocalLlmTests) {
 		try {
 			execSync("which ollama", { stdio: "ignore" });
 			ollamaInstalled = true;

@@ -25,6 +25,8 @@ import { resolveApiKey } from "./oauth.ts";
 // Resolve OAuth tokens at module level (async, runs before tests)
 const oauthTokens = await Promise.all([resolveApiKey("github-copilot"), resolveApiKey("openai-codex")]);
 const [githubCopilotToken, openaiCodexToken] = oauthTokens;
+const enableLocalLlmTests =
+	process.env.MILLRACE_CLI_ENABLE_LOCAL_LLM_TESTS === "1" || process.env.PI_ENABLE_LOCAL_LLM_TESTS === "1";
 
 // Lorem ipsum paragraph for realistic token estimation
 const LOREM_IPSUM = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. `;
@@ -556,9 +558,9 @@ describe("Context overflow error handling", () => {
 	// Ollama (local)
 	// =============================================================================
 
-	// Check if ollama is installed and local LLM tests are enabled
+	// Local LLM tests are intentionally opt-in because they may start local services or pull large models.
 	let ollamaInstalled = false;
-	if (!process.env.PI_NO_LOCAL_LLM) {
+	if (enableLocalLlmTests) {
 		try {
 			execSync("which ollama", { stdio: "ignore" });
 			ollamaInstalled = true;
@@ -648,11 +650,11 @@ describe("Context overflow error handling", () => {
 	});
 
 	// =============================================================================
-	// LM Studio (local) - Skip if not running or local LLM tests disabled
+	// LM Studio (local) - Skip unless explicitly enabled and already running
 	// =============================================================================
 
 	let lmStudioRunning = false;
-	if (!process.env.PI_NO_LOCAL_LLM) {
+	if (enableLocalLlmTests) {
 		try {
 			execSync("curl -s --max-time 1 http://localhost:1234/v1/models > /dev/null", { stdio: "ignore" });
 			lmStudioRunning = true;
@@ -685,11 +687,11 @@ describe("Context overflow error handling", () => {
 	});
 
 	// =============================================================================
-	// llama.cpp server (local) - Skip if not running or not exposing /v1/completions
+	// llama.cpp server (local) - Skip unless explicitly enabled and already running
 	// =============================================================================
 
 	let llamaCppRunning = false;
-	if (!process.env.PI_NO_LOCAL_LLM) {
+	if (enableLocalLlmTests) {
 		try {
 			execSync("curl -s --max-time 1 http://localhost:8081/health > /dev/null", { stdio: "ignore" });
 			const probeStatus = execSync(

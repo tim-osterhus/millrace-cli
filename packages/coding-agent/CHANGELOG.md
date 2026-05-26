@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.2 - 2026-05-26
+
+### Changed
+
+- Made local-model tests opt-in with `MILLRACE_CLI_ENABLE_LOCAL_LLM_TESTS=1` or `PI_ENABLE_LOCAL_LLM_TESTS=1`, so default test runs cannot start Ollama/LM Studio/llama.cpp checks or pull local model artifacts.
+
 ## 0.0.1 - 2026-05-26
 
 ### Added
