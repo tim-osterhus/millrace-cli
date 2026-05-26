@@ -9,27 +9,33 @@ npm install -g millrace-cli
 millrace-cli
 ```
 
-## What This Release Is
+Node.js 22.19 or newer is required. Normal npm installs do not need lifecycle scripts; `npm install -g --ignore-scripts millrace-cli` is supported.
 
-`millrace-cli` is the first npm package cut from the imported Pi source baseline. It provides the Pi-derived interactive CLI under the `millrace-cli` command with isolated default configuration in `~/.millrace-cli/agent`.
+## What This Package Is
 
-The full Millrace-specific agent layer is intentionally staged for follow-up implementation:
+`millrace-cli` is the npm package and executable for the interactive Millrace operator harness. It is derived from Pi, so it keeps the inherited terminal UI, model/provider support, session handling, extension system, skills, prompt templates, themes, and tool surfaces.
 
-- hardcoded Millrace operator system prompt;
-- always-included Millrace operating skills;
-- Millmux Agent Cockpit context awareness;
-- docs rewritten around Millrace operations instead of upstream Pi usage.
+The current Millrace-specific agent layer includes:
+
+- canonical Millrace operator system prompt guidance;
+- always-included Millrace operating skills for delegation decisions, runtime operation, completion evidence, and Millmux context-awareness guidance;
+- Millmux Agent Cockpit context detection from environment variables and an optional JSON context file, rendered only when context is present;
+- isolated default configuration under `~/.millrace-cli/agent`.
 
 ## Current Capabilities
 
-This initial package keeps the inherited Pi functionality:
+This package keeps the inherited Pi functionality:
 
 - interactive terminal coding-agent UI;
 - print, JSON, and RPC modes;
 - session persistence;
 - model/provider support;
-- skills, prompt templates, extensions, and themes;
+- built-in Millrace operating skills plus user, project, package, extension, and CLI-provided skills;
+- Millmux context prompt notes from `MILLMUX_*` and `MILLRACE_WORKSPACE` environment values without screen scraping;
+- prompt templates, extensions, and themes;
 - read, write, edit, bash, grep, find, and ls tool surfaces.
+
+This package does not implement the Python Millrace runtime, does not replace Millracer, and does not implement Millmux.
 
 ## Usage
 
@@ -38,6 +44,7 @@ millrace-cli
 millrace-cli "inspect this repository"
 millrace-cli --print "summarize the current directory"
 millrace-cli --help
+millrace-cli --version
 ```
 
 ## Configuration
@@ -55,12 +62,33 @@ MILLRACE_CLI_CODING_AGENT_DIR
 MILLRACE_CLI_CODING_AGENT_SESSION_DIR
 ```
 
+Some inherited compatibility environment variables still use the `PI_` prefix, such as `PI_OFFLINE`, `PI_PACKAGE_DIR`, and `PI_SKIP_VERSION_CHECK`.
+
 ## Relationship To Other Millrace Tools
 
 - `millrace` is the Python Millrace runtime CLI.
 - `millrace-cli` is the interactive agent harness.
 - `millracer` remains the existing Python/headless operator harness for now.
-- `millmux` is the future session cockpit that can run `millrace-cli` beside a Millrace daemon.
+- `millmux` is the session cockpit that can run `millrace-cli` beside a Millrace daemon; this package can consume explicit Millmux environment values, context-file JSON, or `millmux context --json`.
+
+`millrace-cli` does not infer daemon state from screen output. Refresh Millmux context from the file or `millmux context --json` before daemon-targeted actions.
+
+## Package Contents
+
+The npm package ships `dist`, docs, examples, changelog, license files, and the generated package shrinkwrap. Development-only `ref-millrace/` and runtime-owned `millrace-agents/` directories do not ship with the package.
+
+## Local Development
+
+```bash
+npm ci --ignore-scripts
+npm run build
+npm run check
+npm --prefix packages/coding-agent run build
+node packages/coding-agent/dist/cli.js --help
+node packages/coding-agent/dist/cli.js --version
+```
+
+See [Development](docs/development.md), [Millrace CLI](docs/millrace-cli.md), and [Millmux Agent Cockpit](docs/millmux-cockpit.md).
 
 ## Attribution And License
 

@@ -7,6 +7,7 @@ type StreamOptionsWithExtras = StreamOptions & Record<string, unknown>;
 
 import { hasAzureOpenAICredentials, resolveAzureDeploymentName } from "./azure-utils.ts";
 import { hasBedrockCredentials } from "./bedrock-utils.ts";
+import { hasMistralLiveCredentials } from "./mistral-test-gate.ts";
 import { resolveApiKey } from "./oauth.ts";
 
 // Resolve OAuth tokens at module level (async, runs before tests)
@@ -166,7 +167,7 @@ describe("AI Providers Abort Tests", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral Provider Abort", () => {
+	describe.skipIf(!hasMistralLiveCredentials())("Mistral Provider Abort", () => {
 		const llm = getModel("mistral", "devstral-medium-latest");
 
 		it("should abort mid-stream", { retry: 3 }, async () => {

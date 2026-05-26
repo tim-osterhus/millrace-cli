@@ -14,14 +14,18 @@ import {
 } from "./config.ts";
 import { DefaultPackageManager } from "./core/package-manager.ts";
 import { SettingsManager } from "./core/settings-manager.ts";
+import {
+	getPackageCommandUsage,
+	normalizePackageCommand,
+	type PackageCommand,
+	printPackageCommandHelp,
+} from "./package-command-help.ts";
 import { spawnProcess } from "./utils/child-process.ts";
 import { getLatestPiRelease, isNewerPackageVersion } from "./utils/version-check.ts";
 import {
 	cleanupWindowsSelfUpdateQuarantine,
 	quarantineWindowsNativeDependencies,
 } from "./utils/windows-self-update.ts";
-
-export type PackageCommand = "install" | "remove" | "update" | "list";
 
 type UpdateTarget = { type: "all" } | { type: "self" } | { type: "extensions"; source?: string };
 
@@ -65,93 +69,9 @@ function reportSettingsErrors(settingsManager: SettingsManager, context: string)
 	}
 }
 
-function getPackageCommandUsage(command: PackageCommand): string {
-	switch (command) {
-		case "install":
-			return `${APP_NAME} install <source> [-l]`;
-		case "remove":
-			return `${APP_NAME} remove <source> [-l]`;
-		case "update":
-			return `${APP_NAME} update [source|self|${APP_NAME}] [--self] [--extensions] [--extension <source>] [--force]`;
-		case "list":
-			return `${APP_NAME} list`;
-	}
-}
-
-function printPackageCommandHelp(command: PackageCommand): void {
-	switch (command) {
-		case "install":
-			console.log(`${chalk.bold("Usage:")}
-  ${getPackageCommandUsage("install")}
-
-Install a package and add it to settings.
-
-Options:
-  -l, --local    Install project-locally (.pi/settings.json)
-
-Examples:
-  ${APP_NAME} install npm:@foo/bar
-  ${APP_NAME} install git:github.com/user/repo
-  ${APP_NAME} install git:git@github.com:user/repo
-  ${APP_NAME} install https://github.com/user/repo
-  ${APP_NAME} install ssh://git@github.com/user/repo
-  ${APP_NAME} install ./local/path
-`);
-			return;
-
-		case "remove":
-			console.log(`${chalk.bold("Usage:")}
-  ${getPackageCommandUsage("remove")}
-
-Remove a package and its source from settings.
-Alias: ${APP_NAME} uninstall <source> [-l]
-
-Options:
-  -l, --local    Remove from project settings (.pi/settings.json)
-
-Examples:
-  ${APP_NAME} remove npm:@foo/bar
-  ${APP_NAME} uninstall npm:@foo/bar
-`);
-			return;
-
-		case "update":
-			console.log(`${chalk.bold("Usage:")}
-  ${getPackageCommandUsage("update")}
-
-Update ${APP_NAME} and installed packages.
-
-Options:
-  --self                  Update ${APP_NAME} only
-  --extensions            Update installed packages only
-  --extension <source>    Update one package only
-  --force                 Reinstall ${APP_NAME} even if the current version is latest
-
-Short forms:
-  ${APP_NAME} update                Update ${APP_NAME} and all extensions
-  ${APP_NAME} update <source>       Update one package
-  ${APP_NAME} update ${APP_NAME}    Update ${APP_NAME} only (self works as an alias)
-`);
-			return;
-
-		case "list":
-			console.log(`${chalk.bold("Usage:")}
-  ${getPackageCommandUsage("list")}
-
-List installed packages from user and project settings.
-`);
-			return;
-	}
-}
-
 function parsePackageCommand(args: string[]): PackageCommandOptions | undefined {
 	const [rawCommand, ...rest] = args;
-	let command: PackageCommand | undefined;
-	if (rawCommand === "uninstall") {
-		command = "remove";
-	} else if (rawCommand === "install" || rawCommand === "remove" || rawCommand === "update" || rawCommand === "list") {
-		command = rawCommand;
-	}
+	const command = normalizePackageCommand(rawCommand);
 	if (!command) {
 		return undefined;
 	}

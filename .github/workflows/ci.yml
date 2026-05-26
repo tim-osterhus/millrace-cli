@@ -39,4 +39,6 @@ jobs:
         run: npm run check
 
       - name: Test
+        env:
+          MILLRACE_CLI_ENABLE_MISTRAL_LIVE_TESTS: "0"
         run: npm test

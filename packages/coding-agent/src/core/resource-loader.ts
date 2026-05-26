@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import chalk from "chalk";
 import { CONFIG_DIR_NAME } from "../config.ts";
+import { getBuiltInMillraceSkillsDir } from "../millrace/builtin-skills.ts";
 import { loadThemeFromPath, type Theme } from "../modes/interactive/theme/theme.ts";
 import type { ResourceDiagnostic } from "./diagnostics.ts";
 
@@ -294,7 +295,7 @@ export class DefaultResourceLoader implements ResourceLoader {
 		}
 
 		if (skillPaths.length > 0) {
-			this.lastSkillPaths = this.mergePaths(
+			this.lastSkillPaths = this.mergeSkillPathsWithBuiltIns(
 				this.lastSkillPaths,
 				skillPaths.map((entry) => entry.path),
 			);
@@ -325,10 +326,22 @@ export class DefaultResourceLoader implements ResourceLoader {
 			temporary: true,
 		});
 		const metadataByPath = new Map<string, PathMetadata>();
+		const builtInMillraceSkillsDir = getBuiltInMillraceSkillsDir();
+		const builtInMillraceSkillMetadata: PathMetadata = {
+			source: "builtin",
+			scope: "temporary",
+			origin: "package",
+			baseDir: builtInMillraceSkillsDir,
+		};
+		metadataByPath.set(builtInMillraceSkillsDir, builtInMillraceSkillMetadata);
 
 		this.extensionSkillSourceInfos = new Map();
 		this.extensionPromptSourceInfos = new Map();
 		this.extensionThemeSourceInfos = new Map();
+		this.extensionSkillSourceInfos.set(
+			builtInMillraceSkillsDir,
+			createSourceInfo(builtInMillraceSkillsDir, builtInMillraceSkillMetadata),
+		);
 
 		// Helper to extract enabled paths and store metadata
 		const getEnabledResources = (
@@ -419,8 +432,8 @@ export class DefaultResourceLoader implements ResourceLoader {
 		this.applyExtensionSourceInfo(this.extensionsResult.extensions, metadataByPath);
 
 		const skillPaths = this.noSkills
-			? this.mergePaths(cliEnabledSkills, this.additionalSkillPaths)
-			: this.mergePaths([...cliEnabledSkills, ...enabledSkills], this.additionalSkillPaths);
+			? this.mergeSkillPathsWithBuiltIns(cliEnabledSkills, this.additionalSkillPaths)
+			: this.mergeSkillPathsWithBuiltIns([...cliEnabledSkills, ...enabledSkills], this.additionalSkillPaths);
 
 		this.lastSkillPaths = skillPaths;
 		this.updateSkillsFromPaths(skillPaths, metadataByPath);
@@ -689,6 +702,17 @@ export class DefaultResourceLoader implements ResourceLoader {
 		}
 
 		return merged;
+	}
+
+	private mergeSkillPathsWithBuiltIns(primary: string[], additional: string[]): string[] {
+		const builtInSkillPaths = [getBuiltInMillraceSkillsDir()];
+		const builtInCanonicalPaths = new Set(
+			builtInSkillPaths.map((path) => canonicalizePath(this.resolveResourcePath(path))),
+		);
+		const withoutBuiltIns = (paths: string[]) =>
+			paths.filter((path) => !builtInCanonicalPaths.has(canonicalizePath(this.resolveResourcePath(path))));
+
+		return this.mergePaths(withoutBuiltIns(primary), [...withoutBuiltIns(additional), ...builtInSkillPaths]);
 	}
 
 	private resolveResourcePath(p: string): string {

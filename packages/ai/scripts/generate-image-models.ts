@@ -36,8 +36,9 @@ async function fetchOpenRouterImageModels(): Promise<ImagesModel<"openrouter-ima
 		for (const model of data.data ?? []) {
 			const input = Array.from(
 				new Set(
-					(model.architecture?.input_modalities ?? [])
-						.filter((modality): modality is "text" | "image" => modality === "text" || modality === "image"),
+					(model.architecture?.input_modalities ?? []).filter(
+						(modality): modality is "text" | "image" => modality === "text" || modality === "image",
+					),
 				),
 			);
 			const output = Array.from(
@@ -76,33 +77,49 @@ async function fetchOpenRouterImageModels(): Promise<ImagesModel<"openrouter-ima
 	}
 }
 
-function generateImageModelsFile(models: ImagesModel<"openrouter-images">[]): string {
-	const imageModelsByProvider = {
-		openrouter: Object.fromEntries(
-			models
-				.sort((a, b) => a.id.localeCompare(b.id))
-				.map((model) => [
-					model.id,
-					`{
+function formatPropertyKey(key: string): string {
+	return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) ? key : JSON.stringify(key);
+}
+
+function formatStringArray(values: string[]): string {
+	return `[${values.map((value) => JSON.stringify(value)).join(", ")}]`;
+}
+
+function formatImageModel(model: ImagesModel<"openrouter-images">): string {
+	return `{
 			id: ${JSON.stringify(model.id)},
 			name: ${JSON.stringify(model.name)},
 			api: ${JSON.stringify(model.api)},
 			provider: ${JSON.stringify(model.provider)},
 			baseUrl: ${JSON.stringify(model.baseUrl)},
-			input: ${JSON.stringify(model.input)},
-			output: ${JSON.stringify(model.output)},
-			cost: ${JSON.stringify(model.cost, null, 2).replace(/^/gm, "\t")}
-		} satisfies ImagesModel<${JSON.stringify(model.api)}>`,
-				]),
-		),
-	};
+			input: ${formatStringArray(model.input)},
+			output: ${formatStringArray(model.output)},
+			cost: {
+				input: ${model.cost.input},
+				output: ${model.cost.output},
+				cacheRead: ${model.cost.cacheRead},
+				cacheWrite: ${model.cost.cacheWrite},
+			},
+		} satisfies ImagesModel<${JSON.stringify(model.api)}>`;
+}
+
+function generateImageModelsFile(models: ImagesModel<"openrouter-images">[]): string {
+	const imageModelsByProvider: Record<string, ImagesModel<"openrouter-images">[]> = {};
+	for (const model of models) {
+		imageModelsByProvider[model.provider] ??= [];
+		imageModelsByProvider[model.provider].push(model);
+	}
 
 	const providerEntries = Object.entries(imageModelsByProvider)
+		.sort(([left], [right]) => left.localeCompare(right))
 		.map(([provider, providerModels]) => {
-			const modelEntries = Object.entries(providerModels)
-				.map(([id, serialized]) => `\t\t${JSON.stringify(id)}: ${serialized},`)
+			const modelEntries = [...providerModels]
+				.sort((a, b) => a.id.localeCompare(b.id))
+				.map((model) => `\t\t${formatPropertyKey(model.id)}: ${formatImageModel(model)},`)
 				.join("\n");
-			return `\t${JSON.stringify(provider)}: {\n${modelEntries}\n\t},`;
+			return modelEntries.length > 0
+				? `\t${formatPropertyKey(provider)}: {\n${modelEntries}\n\t},`
+				: `\t${formatPropertyKey(provider)}: {},`;
 		})
 		.join("\n");
 

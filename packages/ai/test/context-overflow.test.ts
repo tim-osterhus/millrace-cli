@@ -20,6 +20,7 @@ import type { AssistantMessage, Context, Model, Usage } from "../src/types.ts";
 import { isContextOverflow } from "../src/utils/overflow.ts";
 import { hasAzureOpenAICredentials } from "./azure-utils.ts";
 import { hasBedrockCredentials } from "./bedrock-utils.ts";
+import { hasMistralLiveCredentials } from "./mistral-test-gate.ts";
 import { resolveApiKey } from "./oauth.ts";
 
 // Resolve OAuth tokens at module level (async, runs before tests)
@@ -379,7 +380,7 @@ describe("Context overflow error handling", () => {
 	// Mistral
 	// =============================================================================
 
-	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral", () => {
+	describe.skipIf(!hasMistralLiveCredentials())("Mistral", () => {
 		it("devstral-medium-latest - should detect overflow via isContextOverflow", async () => {
 			const model = getModel("mistral", "devstral-medium-latest");
 			const result = await testContextOverflow(model, process.env.MISTRAL_API_KEY!);

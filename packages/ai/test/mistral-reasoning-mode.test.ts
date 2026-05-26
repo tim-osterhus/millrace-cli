@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getModel } from "../src/models.ts";
-import { streamSimple } from "../src/stream.ts";
+import { streamSimpleMistral } from "../src/providers/mistral.ts";
 import type { Context, Model, SimpleStreamOptions } from "../src/types.ts";
 
 interface MistralPayload {
@@ -19,25 +19,24 @@ async function capturePayload(
 	options?: SimpleStreamOptions,
 ): Promise<MistralPayload> {
 	let capturedPayload: MistralPayload | undefined;
-	const payloadCaptureModel: Model<"mistral-conversations"> = {
-		...model,
-		baseUrl: "http://127.0.0.1:9",
-	};
+	const payloadCapturedError = new Error("Captured Mistral payload");
 
-	const stream = streamSimple(payloadCaptureModel, makeContext(), {
+	const stream = streamSimpleMistral(model, makeContext(), {
 		...options,
 		apiKey: "fake-key",
 		onPayload: (payload) => {
 			capturedPayload = payload as MistralPayload;
-			return payload;
+			throw payloadCapturedError;
 		},
 	});
 
-	await stream.result();
+	const response = await stream.result();
 
 	if (!capturedPayload) {
 		throw new Error("Expected payload to be captured before request failure");
 	}
+	expect(response.stopReason).toBe("error");
+	expect(response.errorMessage).toBe(payloadCapturedError.message);
 
 	return capturedPayload;
 }

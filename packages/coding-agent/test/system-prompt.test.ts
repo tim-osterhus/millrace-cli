@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildSystemPrompt } from "../src/core/system-prompt.ts";
+import { MILLRACE_OPERATOR_PREAMBLE } from "../src/millrace/system-prompt.ts";
 
 describe("buildSystemPrompt", () => {
 	describe("empty tools", () => {
@@ -27,6 +28,17 @@ describe("buildSystemPrompt", () => {
 	});
 
 	describe("default tools", () => {
+		test("identifies Millrace CLI in the default prompt", () => {
+			const prompt = buildSystemPrompt({
+				contextFiles: [],
+				skills: [],
+				cwd: process.cwd(),
+			});
+
+			expect(prompt).toContain(MILLRACE_OPERATOR_PREAMBLE);
+			expect(prompt).toContain("operating inside Millrace CLI");
+		});
+
 		test("includes all default tools when snippets are provided", () => {
 			const prompt = buildSystemPrompt({
 				toolSnippets: {

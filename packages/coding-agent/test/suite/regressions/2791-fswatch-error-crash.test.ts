@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -23,15 +23,8 @@ describe("issue #2791 fs.watch error event crashes process", () => {
 
 	beforeEach(() => {
 		tempRoot = mkdtempSync(join(tmpdir(), "pi-2791-"));
-		const agentDir = join(tempRoot, "agent");
-		const themesDir = join(agentDir, "themes");
+		const themesDir = join(tempRoot, "themes");
 		mkdirSync(themesDir, { recursive: true });
-
-		// Copy dark.json as "custom-test" theme
-		const darkThemePath = join(__dirname, "../../../src/modes/interactive/theme/dark.json");
-		const darkTheme = JSON.parse(readFileSync(darkThemePath, "utf-8"));
-		darkTheme.name = "custom-test";
-		writeFileSync(join(themesDir, "custom-test.json"), JSON.stringify(darkTheme, null, 2));
 	});
 
 	afterEach(() => {
@@ -39,28 +32,22 @@ describe("issue #2791 fs.watch error event crashes process", () => {
 	});
 
 	it("process should survive an error event on the theme FSWatcher", () => {
-		const themeModulePath = join(__dirname, "../../../src/modes/interactive/theme/theme.ts").replace(/\\/g, "/");
-		const agentDir = join(tempRoot, "agent").replace(/\\/g, "/");
+		const fsWatchModulePath = join(__dirname, "../../../src/utils/fs-watch.ts").replace(/\\/g, "/");
+		const themesDir = join(tempRoot, "themes").replace(/\\/g, "/");
 
 		// Script that sets up the watcher and emits a synthetic error on it.
 		// If no .on('error') handler is attached, EventEmitter.emit('error')
 		// throws, which either crashes the process or gets caught by our try/catch.
-		const scriptPath = join(tempRoot, "test-watcher-error.mts");
+		const scriptPath = join(tempRoot, "test-watcher-error.mjs");
 		writeFileSync(
 			scriptPath,
 			`
-import { setTheme, stopThemeWatcher } from "${themeModulePath}";
+import { closeWatcher, watchWithErrorHandler } from "${fsWatchModulePath}";
 
-process.env.PI_CODING_AGENT_DIR = "${agentDir}";
-
-setTheme("custom-test", true);
-
-// Find the FSWatcher among active handles
-const handles = (process as any)._getActiveHandles();
-const fsWatcher = handles.find((h: any) => h.constructor?.name === "FSWatcher");
+const fsWatcher = watchWithErrorHandler("${themesDir}", () => {}, () => {});
 
 if (!fsWatcher) {
-	process.stderr.write("no FSWatcher found among active handles\\n");
+	process.stderr.write("no FSWatcher returned\\n");
 	process.exit(2);
 }
 
@@ -78,7 +65,7 @@ try {
 	process.exit(1);
 }
 
-stopThemeWatcher();
+closeWatcher(fsWatcher);
 process.exit(0);
 `,
 		);
@@ -90,7 +77,7 @@ process.exit(0);
 			_stdout = execFileSync(process.execPath, [scriptPath], {
 				timeout: 10000,
 				encoding: "utf-8",
-				env: { ...process.env, PI_CODING_AGENT_DIR: agentDir },
+				env: process.env,
 				stdio: ["pipe", "pipe", "pipe"],
 			});
 			exitCode = 0;

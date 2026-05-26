@@ -3,6 +3,7 @@ import { getModel } from "../src/models.ts";
 import { complete } from "../src/stream.ts";
 import type { Api, Context, Model, StreamOptions } from "../src/types.ts";
 import { hasAzureOpenAICredentials, resolveAzureDeploymentName } from "./azure-utils.ts";
+import { hasMistralLiveCredentials } from "./mistral-test-gate.ts";
 import { resolveApiKey } from "./oauth.ts";
 
 type StreamOptionsWithExtras = StreamOptions & Record<string, unknown>;
@@ -88,7 +89,7 @@ describe("responseId E2E Tests", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral Provider", () => {
+	describe.skipIf(!hasMistralLiveCredentials())("Mistral Provider", () => {
 		const llm = getModel("mistral", "devstral-medium-latest");
 
 		it("should expose responseId", { retry: 3, timeout: 30000 }, async () => {

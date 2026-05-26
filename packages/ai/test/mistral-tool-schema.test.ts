@@ -1,7 +1,7 @@
 import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
 import { getModel } from "../src/models.ts";
-import { complete } from "../src/stream.ts";
+import { streamMistral } from "../src/providers/mistral.ts";
 import type { Context, Model } from "../src/types.ts";
 
 interface MistralToolPayload {
@@ -16,10 +16,7 @@ interface MistralToolPayload {
 
 describe("Mistral tool schema serialization", () => {
 	it("strips TypeBox symbol keys before the SDK validates tool schemas", async () => {
-		const model: Model<"mistral-conversations"> = {
-			...getModel("mistral", "devstral-medium-latest"),
-			baseUrl: "http://127.0.0.1:9",
-		};
+		const model: Model<"mistral-conversations"> = getModel("mistral", "devstral-medium-latest");
 		const parameters = Type.Object({
 			nested: Type.Object({
 				value: Type.String(),
@@ -36,14 +33,16 @@ describe("Mistral tool schema serialization", () => {
 			],
 		};
 		let capturedPayload: MistralToolPayload | undefined;
+		const payloadCapturedError = new Error("Captured Mistral payload");
 
-		const response = await complete(model, context, {
+		const stream = streamMistral(model, context, {
 			apiKey: "fake-key",
 			onPayload: (payload) => {
 				capturedPayload = payload as MistralToolPayload;
-				return payload;
+				throw payloadCapturedError;
 			},
 		});
+		const response = await stream.result();
 
 		expect(capturedPayload?.tools).toHaveLength(1);
 		const payloadParameters = capturedPayload?.tools?.[0]?.function.parameters;
@@ -56,6 +55,6 @@ describe("Mistral tool schema serialization", () => {
 		expect(nested).toBeTruthy();
 		expect(Object.getOwnPropertySymbols((nested as Record<string, unknown>) ?? {})).toHaveLength(0);
 		expect(response.stopReason).toBe("error");
-		expect(response.errorMessage).not.toContain("Input validation failed");
+		expect(response.errorMessage).toBe(payloadCapturedError.message);
 	});
 });

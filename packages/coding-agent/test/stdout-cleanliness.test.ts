@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ENV_AGENT_DIR } from "../src/config.ts";
+import { CONFIG_DIR_NAME, ENV_AGENT_DIR } from "../src/config.ts";
 
 const cliPath = resolve(__dirname, "../src/cli.ts");
 
@@ -25,7 +25,7 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 	const tempRoot = createTempDir();
 	const agentDir = join(tempRoot, "agent");
 	const projectDir = join(tempRoot, "project");
-	const projectConfigDir = join(projectDir, ".pi");
+	const projectConfigDir = join(projectDir, CONFIG_DIR_NAME);
 	mkdirSync(agentDir, { recursive: true });
 	mkdirSync(projectConfigDir, { recursive: true });
 
@@ -80,6 +80,24 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 }
 
 describe("stdout cleanliness in non-interactive modes", () => {
+	it("renders install help through the CLI entrypoint with the configured project config directory", async () => {
+		const result = await runCli(["install", "--help"]);
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain(`Install project-locally (${CONFIG_DIR_NAME}/settings.json)`);
+		expect(result.stdout).not.toContain(".pi/settings.json");
+		expect(result.stderr).not.toContain(".pi/settings.json");
+	});
+
+	it("renders remove help through the CLI entrypoint with the configured project config directory", async () => {
+		const result = await runCli(["remove", "--help"]);
+
+		expect(result.code).toBe(0);
+		expect(result.stdout).toContain(`Remove from project settings (${CONFIG_DIR_NAME}/settings.json)`);
+		expect(result.stdout).not.toContain(".pi/settings.json");
+		expect(result.stderr).not.toContain(".pi/settings.json");
+	});
+
 	it("keeps stdout empty for --mode json --help while routing startup chatter to stderr", async () => {
 		const result = await runCli(["--mode", "json", "--help"]);
 

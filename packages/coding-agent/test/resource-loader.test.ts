@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { CONFIG_DIR_NAME } from "../src/config.ts";
 import { AuthStorage } from "../src/core/auth-storage.ts";
 import { ExtensionRunner } from "../src/core/extensions/runner.ts";
 import { ModelRegistry } from "../src/core/model-registry.ts";
@@ -11,6 +12,7 @@ import { SessionManager } from "../src/core/session-manager.ts";
 import { SettingsManager } from "../src/core/settings-manager.ts";
 import type { Skill } from "../src/core/skills.ts";
 import { createSyntheticSourceInfo } from "../src/core/source-info.ts";
+import { BUILTIN_MILLRACE_SKILL_NAMES } from "../src/millrace/builtin-skills.ts";
 
 describe("DefaultResourceLoader", () => {
 	let tempDir: string;
@@ -58,6 +60,21 @@ Skill content here.`,
 			expect(skills.some((s) => s.name === "test-skill")).toBe(true);
 		});
 
+		it("should include built-in Millrace skills by default", async () => {
+			const loader = new DefaultResourceLoader({ cwd, agentDir });
+			await loader.reload();
+
+			const { skills, diagnostics } = loader.getSkills();
+			for (const skillName of BUILTIN_MILLRACE_SKILL_NAMES) {
+				const skill = skills.find((s) => s.name === skillName);
+				expect(skill).toBeDefined();
+				expect(skill?.sourceInfo.source).toBe("builtin");
+				expect(skill?.sourceInfo.origin).toBe("package");
+				expect(skill?.filePath.replace(/\\/g, "/")).toContain(`millrace/skills/${skillName}/SKILL.md`);
+			}
+			expect(diagnostics.filter((d) => d.path?.includes("src/millrace/skills"))).toEqual([]);
+		});
+
 		it("should ignore extra markdown files in auto-discovered skill dirs", async () => {
 			const skillDir = join(agentDir, "skills", "pi-skills", "browser-tools");
 			mkdirSync(skillDir, { recursive: true });
@@ -99,7 +116,7 @@ Prompt content.`,
 
 		it("should prefer project resources over user on name collisions", async () => {
 			const userPromptsDir = join(agentDir, "prompts");
-			const projectPromptsDir = join(cwd, ".pi", "prompts");
+			const projectPromptsDir = join(cwd, CONFIG_DIR_NAME, "prompts");
 			mkdirSync(userPromptsDir, { recursive: true });
 			mkdirSync(projectPromptsDir, { recursive: true });
 			const userPromptPath = join(userPromptsDir, "commit.md");
@@ -108,7 +125,7 @@ Prompt content.`,
 			writeFileSync(projectPromptPath, "Project prompt");
 
 			const userSkillDir = join(agentDir, "skills", "collision-skill");
-			const projectSkillDir = join(cwd, ".pi", "skills", "collision-skill");
+			const projectSkillDir = join(cwd, CONFIG_DIR_NAME, "skills", "collision-skill");
 			mkdirSync(userSkillDir, { recursive: true });
 			mkdirSync(projectSkillDir, { recursive: true });
 			const userSkillPath = join(userSkillDir, "SKILL.md");
@@ -135,9 +152,9 @@ Project skill`,
 			) as { name: string; vars?: Record<string, string> };
 			baseTheme.name = "collision-theme";
 			const userThemePath = join(agentDir, "themes", "collision.json");
-			const projectThemePath = join(cwd, ".pi", "themes", "collision.json");
+			const projectThemePath = join(cwd, CONFIG_DIR_NAME, "themes", "collision.json");
 			mkdirSync(join(agentDir, "themes"), { recursive: true });
-			mkdirSync(join(cwd, ".pi", "themes"), { recursive: true });
+			mkdirSync(join(cwd, CONFIG_DIR_NAME, "themes"), { recursive: true });
 			writeFileSync(userThemePath, JSON.stringify(baseTheme, null, 2));
 			if (baseTheme.vars) {
 				baseTheme.vars.accent = "#ff00ff";
@@ -157,6 +174,37 @@ Project skill`,
 			expect(theme?.sourcePath).toBe(projectThemePath);
 		});
 
+		it("should let project skills override built-in Millrace skills by name", async () => {
+			const projectSkillDir = join(cwd, CONFIG_DIR_NAME, "skills", "millrace-delegation-decision");
+			mkdirSync(projectSkillDir, { recursive: true });
+			const projectSkillPath = join(projectSkillDir, "SKILL.md");
+			writeFileSync(
+				projectSkillPath,
+				`---
+name: millrace-delegation-decision
+description: Project delegation policy
+---
+Project-specific delegation policy.`,
+			);
+
+			const loader = new DefaultResourceLoader({ cwd, agentDir });
+			await loader.reload();
+
+			const { skills, diagnostics } = loader.getSkills();
+			const loadedSkill = skills.find((s) => s.name === "millrace-delegation-decision");
+			expect(loadedSkill?.filePath).toBe(projectSkillPath);
+			expect(loadedSkill?.sourceInfo.scope).toBe("project");
+			expect(
+				diagnostics.some(
+					(d) =>
+						d.type === "collision" &&
+						d.collision?.resourceType === "skill" &&
+						d.collision.name === "millrace-delegation-decision" &&
+						d.collision.winnerPath === projectSkillPath,
+				),
+			).toBe(true);
+		});
+
 		it("should load symlinked user and project extensions once", async () => {
 			const sharedExtDir = join(tempDir, "shared-extensions");
 			mkdirSync(sharedExtDir, { recursive: true });
@@ -171,9 +219,9 @@ Project skill`,
 			);
 
 			mkdirSync(agentDir, { recursive: true });
-			mkdirSync(join(cwd, ".pi"), { recursive: true });
+			mkdirSync(join(cwd, CONFIG_DIR_NAME), { recursive: true });
 			symlinkSync(sharedExtDir, join(agentDir, "extensions"), "dir");
-			symlinkSync(sharedExtDir, join(cwd, ".pi", "extensions"), "dir");
+			symlinkSync(sharedExtDir, join(cwd, CONFIG_DIR_NAME, "extensions"), "dir");
 
 			const loader = new DefaultResourceLoader({ cwd, agentDir });
 			await loader.reload();
@@ -184,12 +232,12 @@ Project skill`,
 
 			// mergePaths processes project paths before user paths, so the project
 			// alias is the canonical survivor.
-			expect(extensionsResult.extensions[0].path).toBe(join(cwd, ".pi", "extensions", "shared.ts"));
+			expect(extensionsResult.extensions[0].path).toBe(join(cwd, CONFIG_DIR_NAME, "extensions", "shared.ts"));
 		});
 
 		it("should keep both extensions loaded when command names collide", async () => {
 			const userExtDir = join(agentDir, "extensions");
-			const projectExtDir = join(cwd, ".pi", "extensions");
+			const projectExtDir = join(cwd, CONFIG_DIR_NAME, "extensions");
 			mkdirSync(userExtDir, { recursive: true });
 			mkdirSync(projectExtDir, { recursive: true });
 
@@ -318,10 +366,10 @@ Content`,
 			expect(agentsFiles).toEqual([]);
 		});
 
-		it("should discover SYSTEM.md from cwd/.pi", async () => {
-			const piDir = join(cwd, ".pi");
-			mkdirSync(piDir, { recursive: true });
-			writeFileSync(join(piDir, "SYSTEM.md"), "You are a helpful assistant.");
+		it("should discover SYSTEM.md from the project config directory", async () => {
+			const configDir = join(cwd, CONFIG_DIR_NAME);
+			mkdirSync(configDir, { recursive: true });
+			writeFileSync(join(configDir, "SYSTEM.md"), "You are a helpful assistant.");
 
 			const loader = new DefaultResourceLoader({ cwd, agentDir });
 			await loader.reload();
@@ -330,9 +378,9 @@ Content`,
 		});
 
 		it("should discover APPEND_SYSTEM.md", async () => {
-			const piDir = join(cwd, ".pi");
-			mkdirSync(piDir, { recursive: true });
-			writeFileSync(join(piDir, "APPEND_SYSTEM.md"), "Additional instructions.");
+			const configDir = join(cwd, CONFIG_DIR_NAME);
+			mkdirSync(configDir, { recursive: true });
+			writeFileSync(join(configDir, "APPEND_SYSTEM.md"), "Additional instructions.");
 
 			const loader = new DefaultResourceLoader({ cwd, agentDir });
 			await loader.reload();
@@ -444,10 +492,55 @@ Extra content`,
 			expect(loadedSkill?.filePath).toBe(skillPath);
 			expect(loadedSkill?.sourceInfo?.source).toBe("extension:file-url");
 		});
+
+		it("should let extension skills override built-in Millrace skills by name", async () => {
+			const extensionSkillDir = join(tempDir, "extension-skills", "millrace-runtime-operation");
+			mkdirSync(extensionSkillDir, { recursive: true });
+			const skillPath = join(extensionSkillDir, "SKILL.md");
+			writeFileSync(
+				skillPath,
+				`---
+name: millrace-runtime-operation
+description: Extension runtime operation
+---
+Extension-specific runtime operation.`,
+			);
+
+			const loader = new DefaultResourceLoader({ cwd, agentDir });
+			await loader.reload();
+
+			loader.extendResources({
+				skillPaths: [
+					{
+						path: extensionSkillDir,
+						metadata: {
+							source: "extension:runtime",
+							scope: "temporary",
+							origin: "top-level",
+							baseDir: extensionSkillDir,
+						},
+					},
+				],
+			});
+
+			const { skills, diagnostics } = loader.getSkills();
+			const loadedSkill = skills.find((skill) => skill.name === "millrace-runtime-operation");
+			expect(loadedSkill?.filePath).toBe(skillPath);
+			expect(loadedSkill?.sourceInfo?.source).toBe("extension:runtime");
+			expect(
+				diagnostics.some(
+					(d) =>
+						d.type === "collision" &&
+						d.collision?.resourceType === "skill" &&
+						d.collision.name === "millrace-runtime-operation" &&
+						d.collision.winnerPath === skillPath,
+				),
+			).toBe(true);
+		});
 	});
 
 	describe("noSkills option", () => {
-		it("should skip skill discovery when noSkills is true", async () => {
+		it("should skip non-built-in skill discovery when noSkills is true", async () => {
 			const skillsDir = join(agentDir, "skills");
 			mkdirSync(skillsDir, { recursive: true });
 			writeFileSync(
@@ -463,7 +556,10 @@ Content`,
 			await loader.reload();
 
 			const { skills } = loader.getSkills();
-			expect(skills).toEqual([]);
+			expect(skills.some((s) => s.name === "test-skill")).toBe(false);
+			for (const skillName of BUILTIN_MILLRACE_SKILL_NAMES) {
+				expect(skills.some((s) => s.name === skillName)).toBe(true);
+			}
 		});
 
 		it("should still load additional skill paths when noSkills is true", async () => {
@@ -488,6 +584,32 @@ Content`,
 
 			const { skills } = loader.getSkills();
 			expect(skills.some((s) => s.name === "custom")).toBe(true);
+		});
+
+		it("should let additional skill paths override built-in Millrace skills when noSkills is true", async () => {
+			const customSkillDir = join(tempDir, "custom-skills", "millmux-context-awareness");
+			mkdirSync(customSkillDir, { recursive: true });
+			const skillPath = join(customSkillDir, "SKILL.md");
+			writeFileSync(
+				skillPath,
+				`---
+name: millmux-context-awareness
+description: Custom Millmux context policy
+---
+Custom context policy.`,
+			);
+
+			const loader = new DefaultResourceLoader({
+				cwd,
+				agentDir,
+				noSkills: true,
+				additionalSkillPaths: [customSkillDir],
+			});
+			await loader.reload();
+
+			const { skills } = loader.getSkills();
+			const loadedSkill = skills.find((s) => s.name === "millmux-context-awareness");
+			expect(loadedSkill?.filePath).toBe(skillPath);
 		});
 	});
 

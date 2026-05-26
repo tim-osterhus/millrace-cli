@@ -145,6 +145,10 @@ function isWSL(env: NodeJS.ProcessEnv = process.env): boolean {
 		return true;
 	}
 
+	if (env !== process.env) {
+		return false;
+	}
+
 	try {
 		const release = readFileSync("/proc/version", "utf-8");
 		return /microsoft|wsl/i.test(release);

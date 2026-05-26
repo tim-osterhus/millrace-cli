@@ -14,6 +14,7 @@ import { StringEnum } from "../src/utils/typebox-helpers.ts";
 import { hasAzureOpenAICredentials, resolveAzureDeploymentName } from "./azure-utils.ts";
 import { hasBedrockCredentials } from "./bedrock-utils.ts";
 import { hasCloudflareAiGatewayCredentials, hasCloudflareWorkersAICredentials } from "./cloudflare-utils.ts";
+import { hasMistralLiveCredentials } from "./mistral-test-gate.ts";
 import { resolveApiKey } from "./oauth.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -926,7 +927,7 @@ describe("Generate E2E Tests", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral Provider (devstral-medium-latest)", () => {
+	describe.skipIf(!hasMistralLiveCredentials())("Mistral Provider (devstral-medium-latest)", () => {
 		const llm = getModel("mistral", "devstral-medium-latest");
 
 		it("should complete basic text generation", { retry: 3 }, async () => {
@@ -952,7 +953,7 @@ describe("Generate E2E Tests", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral Provider (pixtral-12b with image support)", () => {
+	describe.skipIf(!hasMistralLiveCredentials())("Mistral Provider (pixtral-12b with image support)", () => {
 		const llm = getModel("mistral", "pixtral-12b");
 
 		it("should complete basic text generation", { retry: 3 }, async () => {

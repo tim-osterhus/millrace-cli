@@ -12,7 +12,15 @@
           "path": "quickstart.md"
         },
         {
-          "title": "Using Pi",
+          "title": "Millrace CLI",
+          "path": "millrace-cli.md"
+        },
+        {
+          "title": "Millmux Agent Cockpit",
+          "path": "millmux-cockpit.md"
+        },
+        {
+          "title": "Using Millrace CLI",
           "path": "usage.md"
         },
         {
@@ -131,6 +139,10 @@
         {
           "title": "Development",
           "path": "development.md"
+        },
+        {
+          "title": "Upstream Pi Attribution",
+          "path": "upstream-pi-attribution.md"
         }
       ]
     }

@@ -3,6 +3,8 @@
  */
 
 import { getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
+import { getMillmuxContextPromptNote, type MillmuxContextEnvironment } from "../millrace/millmux-context.ts";
+import { withMillraceOperatorPreamble } from "../millrace/system-prompt.ts";
 import { formatSkillsForPrompt, type Skill } from "./skills.ts";
 
 export interface BuildSystemPromptOptions {
@@ -22,6 +24,8 @@ export interface BuildSystemPromptOptions {
 	contextFiles?: Array<{ path: string; content: string }>;
 	/** Pre-loaded skills. */
 	skills?: Skill[];
+	/** Millmux environment source for prompt context. Omit to skip context detection. */
+	millmuxContextEnv?: MillmuxContextEnvironment | false;
 }
 
 /** Build the system prompt with tools, guidelines, and context */
@@ -35,6 +39,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 		cwd,
 		contextFiles: providedContextFiles,
 		skills: providedSkills,
+		millmuxContextEnv,
 	} = options;
 	const resolvedCwd = cwd;
 	const promptCwd = resolvedCwd.replace(/\\/g, "/");
@@ -46,6 +51,11 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 	const date = `${year}-${month}-${day}`;
 
 	const appendSection = appendSystemPrompt ? `\n\n${appendSystemPrompt}` : "";
+	const millmuxContextNote =
+		millmuxContextEnv === undefined || millmuxContextEnv === false
+			? undefined
+			: getMillmuxContextPromptNote(millmuxContextEnv);
+	const millmuxContextSection = millmuxContextNote ? `\n\n${millmuxContextNote}` : "";
 
 	const contextFiles = providedContextFiles ?? [];
 	const skills = providedSkills ?? [];
@@ -55,6 +65,9 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 
 		if (appendSection) {
 			prompt += appendSection;
+		}
+		if (millmuxContextSection) {
+			prompt += millmuxContextSection;
 		}
 
 		// Append project context files
@@ -77,7 +90,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 		prompt += `\nCurrent date: ${date}`;
 		prompt += `\nCurrent working directory: ${promptCwd}`;
 
-		return prompt;
+		return withMillraceOperatorPreamble(prompt);
 	}
 
 	// Get absolute paths to documentation and examples
@@ -129,7 +142,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 
 	const guidelines = guidelinesList.map((g) => `- ${g}`).join("\n");
 
-	let prompt = `You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.
+	let prompt = `You are an expert coding assistant operating inside Millrace CLI, a Pi-derived coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.
 
 Available tools:
 ${toolsList}
@@ -151,6 +164,9 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 	if (appendSection) {
 		prompt += appendSection;
 	}
+	if (millmuxContextSection) {
+		prompt += millmuxContextSection;
+	}
 
 	// Append project context files
 	if (contextFiles.length > 0) {
@@ -171,5 +187,5 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 	prompt += `\nCurrent date: ${date}`;
 	prompt += `\nCurrent working directory: ${promptCwd}`;
 
-	return prompt;
+	return withMillraceOperatorPreamble(prompt);
 }

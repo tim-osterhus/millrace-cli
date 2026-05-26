@@ -30,6 +30,7 @@ import { completeSimple, getEnvApiKey } from "../src/stream.ts";
 import type { Api, AssistantMessage, Message, Model, Tool, ToolResultMessage } from "../src/types.ts";
 import { hasAzureOpenAICredentials } from "./azure-utils.ts";
 import { hasCloudflareAiGatewayCredentials, hasCloudflareWorkersAICredentials } from "./cloudflare-utils.ts";
+import { hasMistralLiveCredentials } from "./mistral-test-gate.ts";
 import { resolveApiKey } from "./oauth.ts";
 
 // Simple tool for testing
@@ -147,6 +148,7 @@ interface CachedContext {
  * Get API key for provider - checks OAuth storage first, then env vars
  */
 async function getApiKey(provider: string): Promise<string | undefined> {
+	if (provider === "mistral" && !hasMistralLiveCredentials()) return undefined;
 	const oauthKey = await resolveApiKey(provider);
 	if (oauthKey) return oauthKey;
 	return getEnvApiKey(provider);
@@ -165,6 +167,9 @@ function hasApiKey(pair: ProviderModelPair): boolean {
 	if (pair.provider === "cloudflare-ai-gateway") {
 		if (!hasCloudflareAiGatewayCredentials()) return false;
 		return pair.upstreamApiKeyEnv ? !!process.env[pair.upstreamApiKeyEnv] : true;
+	}
+	if (pair.provider === "mistral") {
+		return hasMistralLiveCredentials();
 	}
 	return !!getEnvApiKey(pair.provider);
 }
