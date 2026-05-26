@@ -1,13 +1,13 @@
 {
-	"name": "@earendil-works/pi-coding-agent",
-	"version": "0.75.5",
+	"name": "millrace-cli",
+	"version": "0.0.1",
 	"lockfileVersion": 3,
 	"requires": true,
 	"packages": {
 		"": {
-			"name": "@earendil-works/pi-coding-agent",
-			"version": "0.75.5",
-			"license": "MIT",
+			"name": "millrace-cli",
+			"version": "0.0.1",
+			"license": "MIT AND Apache-2.0",
 			"dependencies": {
 				"@earendil-works/pi-agent-core": "^0.75.5",
 				"@earendil-works/pi-ai": "^0.75.5",
@@ -31,7 +31,7 @@
 				"@mariozechner/clipboard": "0.3.6"
 			},
 			"bin": {
-				"pi": "dist/cli.js"
+				"millrace-cli": "dist/cli.js"
 			},
 			"engines": {
 				"node": ">=22.19.0"

@@ -3,10 +3,15 @@ import { tmpdir } from "os";
 import { delimiter, join } from "path";
 import { afterEach, describe, expect, test } from "vitest";
 import {
+	APP_NAME,
+	CONFIG_DIR_NAME,
 	detectInstallMethod,
+	ENV_AGENT_DIR,
+	ENV_SESSION_DIR,
 	getSelfUpdateCommand,
 	getSelfUpdateUnavailableInstruction,
 	getUpdateInstruction,
+	PACKAGE_NAME,
 } from "../src/config.ts";
 
 const execPathDescriptor = Object.getOwnPropertyDescriptor(process, "execPath");
@@ -144,6 +149,16 @@ function createFakeBunScript(bunBin: string): string {
 	const escapedBunBin = bunBin.replaceAll("'", "'\\''");
 	return `#!/bin/sh\nif [ "$1" = "pm" ] && [ "$2" = "bin" ] && [ "$3" = "-g" ]; then\n\tprintf '%s\\n' '${escapedBunBin}'\n\texit 0\nfi\nexit 1\n`;
 }
+
+describe("Millrace CLI package identity", () => {
+	test("uses millrace-cli package, command, config, and environment names", () => {
+		expect(PACKAGE_NAME).toBe("millrace-cli");
+		expect(APP_NAME).toBe("millrace-cli");
+		expect(CONFIG_DIR_NAME).toBe(".millrace-cli");
+		expect(ENV_AGENT_DIR).toBe("MILLRACE_CLI_CODING_AGENT_DIR");
+		expect(ENV_SESSION_DIR).toBe("MILLRACE_CLI_CODING_AGENT_SESSION_DIR");
+	});
+});
 
 describe("detectInstallMethod", () => {
 	test("detects pnpm from Windows .pnpm install paths", () => {

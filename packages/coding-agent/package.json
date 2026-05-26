@@ -1,13 +1,14 @@
 {
-	"name": "@earendil-works/pi-coding-agent",
-	"version": "0.75.5",
-	"description": "Coding agent CLI with read, bash, edit, write tools and session management",
+	"name": "millrace-cli",
+	"version": "0.0.1",
+	"description": "Pi-derived interactive coding agent CLI for Millrace-oriented operator workflows",
 	"type": "module",
 	"piConfig": {
-		"configDir": ".pi"
+		"name": "millrace-cli",
+		"configDir": ".millrace-cli"
 	},
 	"bin": {
-		"pi": "dist/cli.js"
+		"millrace-cli": "dist/cli.js"
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -26,6 +27,8 @@
 		"docs",
 		"examples",
 		"CHANGELOG.md",
+		"LICENSE",
+		"licenses",
 		"npm-shrinkwrap.json"
 	],
 	"scripts": {
@@ -85,11 +88,11 @@
 		"tui",
 		"agent"
 	],
-	"author": "Mario Zechner",
-	"license": "MIT",
+	"author": "Tim Osterhus",
+	"license": "MIT AND Apache-2.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/earendil-works/pi-mono.git",
+		"url": "git+https://github.com/tim-osterhus/millrace-cli.git",
 		"directory": "packages/coding-agent"
 	},
 	"engines": {
